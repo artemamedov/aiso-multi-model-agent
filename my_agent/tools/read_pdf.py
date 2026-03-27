@@ -19,7 +19,7 @@ def _extract_pdf_pages(file_path: str) -> list[tuple[int, str]]:
     return pages
 
 
-def read_pdf(file_path: str, max_chars: int = 12000) -> str:
+def read_pdf(file_path: str, max_chars: int = 16000) -> str:
     """Read a local PDF file and return full text content page by page.
 
     Use this tool when the user question references an attached PDF or gives you
@@ -49,7 +49,7 @@ def read_pdf(file_path: str, max_chars: int = 12000) -> str:
     return f"{content[:max_chars]}\n\n[TRUNCATED]"
 
 
-def query_pdf(file_path: str, query: str, max_snippets: int = 20) -> str:
+def query_pdf(file_path: str, query: str, max_snippets: int = 10) -> str:
     """Find focused snippets in a local PDF that match a query.
 
     Use this after read_pdf when you need specific facts (names, statuses,
@@ -74,24 +74,27 @@ def query_pdf(file_path: str, query: str, max_snippets: int = 20) -> str:
     matches: list[str] = []
     seen: set[str] = set()
 
+    scored: list[tuple[int, str]] = []
     for page_number, page_text in page_tuples:
         lines = [line.strip() for line in page_text.splitlines() if line.strip()]
         for idx, line in enumerate(lines):
             lower_line = line.lower()
-            if not any(keyword in lower_line for keyword in keywords):
+            score = sum(1 for kw in keywords if kw in lower_line)
+            if score == 0:
                 continue
             context_lines = []
-            if idx > 0:
-                context_lines.append(lines[idx - 1])
-            context_lines.append(line)
-            if idx + 1 < len(lines):
-                context_lines.append(lines[idx + 1])
+            for offset in range(-1, 3):
+                j = idx + offset
+                if 0 <= j < len(lines):
+                    context_lines.append(lines[j])
             snippet = f"Page {page_number}: {' | '.join(context_lines)}"
             if snippet not in seen:
-                matches.append(snippet)
+                scored.append((score, snippet))
                 seen.add(snippet)
-            if len(matches) >= max_snippets:
-                return "\n".join(matches)
+
+    # Return highest-scoring snippets first
+    scored.sort(key=lambda x: x[0], reverse=True)
+    matches = [s for _, s in scored[:max_snippets]]
 
     if matches:
         return "\n".join(matches)

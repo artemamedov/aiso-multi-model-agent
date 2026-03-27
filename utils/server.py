@@ -174,10 +174,22 @@ class ADKAgentRunner:
 
         message_parts = [{"text": question}]
         if file_paths:
-            file_info = (
-                f"\n\nNote: The following files are relevant: {', '.join(file_paths)}"
-            )
-            message_parts[0]["text"] += file_info
+            import base64
+            from pathlib import Path
+            for fp in file_paths:
+                p = Path(fp)
+                if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"):
+                    with open(p, "rb") as img_file:
+                        b64 = base64.b64encode(img_file.read()).decode()
+                    mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp"}
+                    message_parts.append({
+                        "inline_data": {
+                            "mime_type": mime.get(p.suffix.lower().lstrip("."), "image/png"),
+                            "data": b64,
+                        }
+                    })
+                else:
+                    message_parts[0]["text"] += f"\n\nNote: The following files are relevant: {fp}"
 
         # Send message using /run endpoint
         try:
@@ -192,7 +204,7 @@ class ADKAgentRunner:
                         "parts": message_parts,
                     },
                 },
-                timeout=120,
+                timeout=300,
             )
             response.raise_for_status()
             events = response.json()

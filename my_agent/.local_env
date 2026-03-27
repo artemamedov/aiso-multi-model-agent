@@ -1,2 +1,4 @@
 GOOGLE_API_KEY="your_actual_api_key_here"
 USER_ID="user"
+PRIMARY_REASONING_PROVIDER="ollama"
+PRIMARY_REASONING_MODEL="deepseek-r1:14b"

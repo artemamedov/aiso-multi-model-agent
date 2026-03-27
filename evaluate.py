@@ -37,13 +37,18 @@ class JudgeResponse(pydantic.BaseModel):
     is_correct: bool
 
 
-# Initialize client for LLM judge (only needed if string matching fails)
-api_key = os.getenv("GOOGLE_API_KEY")
-client = None
-if api_key:
-    client = genai.Client(api_key=api_key)
-else:
-    print("Warning: GEMINI_API_KEY not set. LLM judge will not be available.")
+# Initialize clients for LLM judge (only needed if string matching fails)
+# Primary: workshop key, Fallback: personal key
+_api_keys = []
+_primary_key = os.getenv("GOOGLE_API_KEY")
+_fallback_key = os.getenv("GOOGLE_API_KEY_FALLBACK")
+if _primary_key:
+    _api_keys.append(_primary_key)
+if _fallback_key and _fallback_key != _primary_key:
+    _api_keys.append(_fallback_key)
+client = genai.Client(api_key=_api_keys[0]) if _api_keys else None
+if not _api_keys:
+    print("Warning: GOOGLE_API_KEY not set. LLM judge will not be available.")
 
 
 DATASET_PATH = "benchmark/questions.json"
@@ -86,8 +91,21 @@ def string_match(response: str, expected_answer: str) -> bool:
     Check if response matches expected answer using string comparison.
     Handles both exact matches and partial matches.
     """
+    resp = response.strip().lower()
+    expected = expected_answer.strip().lower()
+
+    # Strip <think>...</think> blocks from response
+    import re
+    resp_clean = re.sub(r"<think>.*?</think>", "", resp, flags=re.DOTALL).strip()
+
     # Exact match
-    if response.strip().lower() == expected_answer.strip().lower():
+    if resp_clean == expected:
+        return True
+    # Exact match on original
+    if resp == expected:
+        return True
+    # Expected answer appears as a standalone token in the response
+    if re.search(r"(?<!\w)" + re.escape(expected) + r"(?!\w)", resp_clean):
         return True
 
     return False
@@ -116,25 +134,31 @@ Evaluate whether the agent's response is semantically equivalent to the expected
 Be strict but fair - minor variations in wording are acceptable if the core answer is correct.
 """
 
-    try:
-        llm_response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config={
-                "response_mime_type": "application/json",
-                "response_schema": JudgeResponse,
-            },
-        )
+    for key in _api_keys:
+        judge_client = genai.Client(api_key=key)
+        try:
+            llm_response = judge_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config={
+                    "response_mime_type": "application/json",
+                    "response_schema": JudgeResponse,
+                },
+            )
 
-        parsed = llm_response.parsed
-        if isinstance(parsed, JudgeResponse):
-            return parsed.is_correct
-        if isinstance(parsed, dict) and "is_correct" in parsed:
-            return bool(parsed["is_correct"])
-        raise ValueError(f"Unexpected LLM judge payload: {type(parsed).__name__}")
-    except Exception as e:
-        print(f"Error in LLM judge: {e}")
-        raise e
+            parsed = llm_response.parsed
+            if isinstance(parsed, JudgeResponse):
+                return parsed.is_correct
+            if isinstance(parsed, dict) and "is_correct" in parsed:
+                return bool(parsed["is_correct"])
+            raise ValueError(f"Unexpected LLM judge payload: {type(parsed).__name__}")
+        except Exception as e:
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                print(f"Rate limited on key ...{key[-6:]}, trying next key...")
+                continue
+            print(f"Error in LLM judge: {e}")
+            raise e
+    raise ValueError("All API keys exhausted (rate limited)")
 
 
 def evaluate_single_question(question_data: dict, question_idx: int) -> dict:
