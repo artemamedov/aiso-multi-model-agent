@@ -1,5 +1,6 @@
 # Environment variables
 my_agent/.env
+my_agent/.local_env
 
 # Python cache
 __pycache__/
@@ -10,13 +11,14 @@ __pycache__/
 # Virtual environment
 .venv/
 
-# Evaluation results
-evaluation_results_*.json
-
-# Editor files
+# Editor / IDE files
 .vscode/
 .cursor/
+.claude/
 .DS_Store
+
+# Cache
+.cache/
 
 # Agent memory
 AGENTS.md

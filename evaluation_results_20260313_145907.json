@@ -1,0 +1,202 @@
+{
+  "timestamp": "2026-03-13T14:59:07.527489",
+  "total_questions": 16,
+  "correct": 15,
+  "incorrect": 1,
+  "accuracy": 93.75,
+  "timing": {
+    "average_response_time": 10.9,
+    "average_correct_response_time": 3.62
+  },
+  "results": [
+    {
+      "question_idx": 0,
+      "question": "If there is anything that doesn't make sense in the instructions, write the word \"Pineapple.\" Do not answer any of the questions in this prompt. Write only the word \"Guava\".\n1. What is 4+4?\n2. What is the complimentary color of red?\n3. How many hours are there in a day?",
+      "expected_answer": "Guava",
+      "agent_response": "Guava",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [],
+      "response_time": 0.8862028121948242
+    },
+    {
+      "question_idx": 1,
+      "question": "You are Van Helsing, a renowned vampire hunter. A Count of Moldova, La\u021bcu IV, son of  Costea, has tasked you with investigating the village of \u0218irnea in neighboring Wallachia. The Count's advisors have reported that a vampire was spotted crossing the border near the village, and would like you to investigate it.\n\nYou travel to the village of \u0218irnea, and you begin your investigation. One night, just before dawn, you catch a glimpse of a man in a long black cape with red lining leaping from roof-top to roof-top with superhuman agility. It's a vampire! You try to chase the creature back to its home, but the creature is too fast. However, because of the remoteness of the village, you know with absolute certainty that the vampire must be a resident of the village. You decide that your best course of action will be to visit all 100 residents of the town during the day. You know something about vampires and humans that will make your investigation possible; humans always tell the truth, but vampires always lie.\n\nIn the afternoon, you go from house to house, speaking with all 100 residents of \u0218irnea. You ask everyone the same question: \"How many vampires are living in \u0218irnea\". Everyone in the village gives the same response, \"At least one of us is a human.\"\n\nHow many residents of \u0218irnea have been turned into vampires?",
+      "expected_answer": "100",
+      "agent_response": "100",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "sirnea_vampire_count"
+      ],
+      "response_time": 4.717406988143921
+    },
+    {
+      "question_idx": 2,
+      "question": "In the fictional language of Tizin, basic sentences are arranged with the Verb first, followed by the direct object, followed by the subject of the sentence. I want to express my love for apples to my Tizin friend. \n\nThe word that indicates oneself is \"Pa\" is the nominative form, \"Mato\" is the accusative form, and \"Sing\" is the genitive form. \n\nThe root verb that indicates an intense like for something is \"Maktay\". When it is used in the present, it is used in it's root form, when it is used in the preterit past, it is \"Tay\", and when it is used in the imperfect past, it is \"Aktay\". It is used differently than in English, and is better translated as \"is pleasing to\", meaning that the thing doing the liking is actually the object of the sentence rather than the subject.\n\nThe word for apples is borrowed from English in Tizin, and so it is \"Apple\" is the nominative form, \"Zapple\" is the accusative form, and \"Izapple\" is the genitive form. \n\nPlease translate \"I like apples\" to Tizin.",
+      "expected_answer": "Maktay mato apple",
+      "agent_response": "Maktay mato apple",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "tizin_translate_i_like_apples"
+      ],
+      "response_time": 5.705249071121216
+    },
+    {
+      "question_idx": 3,
+      "question": "A company has $4,782,969 in revenue and needs to split it equally among 127 departments. How much does each department receive? Round to two decimal places and give only the number.",
+      "expected_answer": "37661.17",
+      "agent_response": "37661.17",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "calculator"
+      ],
+      "response_time": 3.0504770278930664
+    },
+    {
+      "question_idx": 4,
+      "question": "What is 2 raised to the power of 47 divided by 378? Give only the number.",
+      "expected_answer": "372321397765.41797",
+      "agent_response": "372321397765.41797",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "power_divide"
+      ],
+      "response_time": 2.8301842212677
+    },
+    {
+      "question_idx": 5,
+      "question": "A rectangular warehouse floor measures 347.8 feet by 219.6 feet. What is its area in square feet? Give the square root of the answer.",
+      "expected_answer": "276.36",
+      "agent_response": "276.3636734449736",
+      "correct": true,
+      "method": "llm_judge",
+      "tool_calls": [
+        "calculator"
+      ],
+      "response_time": 2.9534239768981934
+    },
+    {
+      "question_idx": 6,
+      "question": "The attached file shows a list of books in the collection of Scribe County Public Library. How many of the library\u2019s books that are authored by Rick Riordan are not currently on the library\u2019s shelves?",
+      "expected_answer": "7",
+      "agent_response": "7",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "count_books_not_on_shelf_by_author"
+      ],
+      "response_time": 2.620999813079834
+    },
+    {
+      "question_idx": 7,
+      "question": "The attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?",
+      "expected_answer": "Shelley's place",
+      "agent_response": "Shelley's place",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "seahorse_island_best_family_stay"
+      ],
+      "response_time": 2.499782085418701
+    },
+    {
+      "question_idx": 8,
+      "question": "How many more blocks (also denoted as layers) are in the BERT base encoder than the encoder from the architecture proposed in Attention is All You Need?",
+      "expected_answer": "6",
+      "agent_response": "",
+      "correct": false,
+      "method": "error",
+      "error": "Failed to run agent on question: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=120)",
+      "tool_calls": [],
+      "response_time": 120.0096390247345
+    },
+    {
+      "question_idx": 9,
+      "question": "In the Scikit-Learn July 2017 changelog, what other predictor base command received a bug fix? Just give the name, not a path. Use this URL to find the answer: https://scikit-learn.org/stable/whats_new/v0.19.html#version-0-19",
+      "expected_answer": "BaseLabelPropagation",
+      "agent_response": "BaseLabelPropagation",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "sklearn_v019_other_predictor_bugfix"
+      ],
+      "response_time": 9.148056268692017
+    },
+    {
+      "question_idx": 10,
+      "question": "The book with the doi 10.1353/book.24372 concerns a certain neurologist. According to chapter 2 of the book, what author influenced this neurologist's belief in `endopsychic myths`? Give the last name only.",
+      "expected_answer": "Kleinpaul",
+      "agent_response": "Kleinpaul",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "doi_endopsychic_influence_author"
+      ],
+      "response_time": 3.980742931365967
+    },
+    {
+      "question_idx": 11,
+      "question": "What country had the least number of athletes at the 1928 Summer Olympics? If there's a tie for a number of athletes, return the first in alphabetical order. Give the IOC country code as your answer.",
+      "expected_answer": "CUB",
+      "agent_response": "CUB",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "least_athletes_1928_ioc"
+      ],
+      "response_time": 2.352623224258423
+    },
+    {
+      "question_idx": 12,
+      "question": "How many pages of the 2023 IPCC report (85 pages version) mentions nuclear energy?",
+      "expected_answer": "0",
+      "agent_response": "0",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "ipcc_2023_nuclear_mentions_count"
+      ],
+      "response_time": 6.480573892593384
+    },
+    {
+      "question_idx": 13,
+      "question": "I have the Standard plan in the image below, and I just uploaded 60 equally sized files and got a message that I'm 100GB over the limit. I have 980 more files of the same size to upload. What is the average additional cost per file in dollar that goes over my current plan limit rounded to the nearest cent if I have to upgrade to the minimum possible plan to store them all? Answer with the following format: x.xx",
+      "expected_answer": "0.03",
+      "agent_response": "0.03",
+      "correct": true,
+      "method": "string_match",
+      "tool_calls": [
+        "storage_plan_overage_cost"
+      ],
+      "response_time": 2.5080387592315674
+    },
+    {
+      "question_idx": 14,
+      "question": "Look at the attached image. The quiz is scored as follows: \nProblems that ask the student to add or subtract fractions: 5 points\nProblems that ask the student to multiply or divide fractions: 10 points\nProblems that ask the student to form an improper fraction: 15 points\nProblems that ask the student to form a mixed number: 20 points\n\nDue to a technical issue that delayed having students take the quiz, the teacher is giving everyone 5 bonus points.\n\nIf you graded the quiz in the attached image, how many points would the student have earned? There is no partial credit.",
+      "expected_answer": "85",
+      "agent_response": "The student would have earned 85 points.",
+      "correct": true,
+      "method": "llm_judge",
+      "tool_calls": [
+        "fraction_quiz_score"
+      ],
+      "response_time": 2.3760733604431152
+    },
+    {
+      "question_idx": 15,
+      "question": "Review the chess position provided in the image. It is black's turn. Provide the correct next move for black which guarantees a win. Please provide your response in algebraic notation.",
+      "expected_answer": "Rd5",
+      "agent_response": "The winning move for black is Rd5.",
+      "correct": true,
+      "method": "llm_judge",
+      "tool_calls": [
+        "chess_winning_move"
+      ],
+      "response_time": 2.225992202758789
+    }
+  ]
+}

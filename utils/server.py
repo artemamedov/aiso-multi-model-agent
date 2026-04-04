@@ -6,6 +6,7 @@ This module provides a function to run the ADK agent via HTTP requests to the AP
 import atexit
 import os
 import subprocess
+import sys
 import time
 import uuid
 from typing import Any
@@ -55,7 +56,7 @@ class ADKAgentRunner:
         print("Starting ADK API server...")
         # Start the server in the background
         self.server_process = subprocess.Popen(
-            ["adk", "api_server", "--host", "127.0.0.1", "--port", "8000", "."],
+            [sys.executable, "-m", "google.adk.cli", "api_server", "--host", "127.0.0.1", "--port", "8000", "."],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=os.getcwd(),
@@ -146,8 +147,21 @@ class ADKAgentRunner:
                         tool_results.append(result_text)
         final_text = "".join(response_parts).strip()
         if not final_text and tool_results:
-            final_text = tool_results[-1]
+            # Prefer short, answer-like tool results over long search dumps
+            short_results = [r for r in tool_results if len(r) < 200]
+            final_text = short_results[-1] if short_results else tool_results[-1]
         return final_text, tool_calls
+
+    @staticmethod
+    def _looks_like_raw_tool_output(text: str) -> bool:
+        """Detect if response is raw search results instead of an actual answer."""
+        if not text:
+            return True
+        stripped = text.strip()
+        # Raw web search results start with numbered entries
+        if stripped.startswith("1. Title:") or stripped.startswith("1. URL:"):
+            return True
+        return False
 
     def run_agent(
         self, question: str, file_paths: list[str] | None = None
@@ -179,52 +193,74 @@ class ADKAgentRunner:
             for fp in file_paths:
                 p = Path(fp)
                 if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"):
-                    with open(p, "rb") as img_file:
-                        b64 = base64.b64encode(img_file.read()).decode()
-                    mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp"}
+                    from PIL import Image
+                    import io
+                    img = Image.open(p)
+                    max_dim = 1024
+                    if max(img.size) > max_dim:
+                        img.thumbnail((max_dim, max_dim))
+                    buf = io.BytesIO()
+                    img.save(buf, format="PNG")
+                    b64 = base64.b64encode(buf.getvalue()).decode()
                     message_parts.append({
                         "inline_data": {
-                            "mime_type": mime.get(p.suffix.lower().lstrip("."), "image/png"),
+                            "mime_type": "image/png",
                             "data": b64,
                         }
                     })
+                    # Also add text path for routing
+                    message_parts[0]["text"] += f"\n\nAttached image: {fp}"
                 else:
                     message_parts[0]["text"] += f"\n\nNote: The following files are relevant: {fp}"
 
-        # Send message using /run endpoint
-        try:
-            response = requests.post(
-                f"{self.base_url}/run",
-                json={
-                    "app_name": self.agent_name,
-                    "user_id": self.user_id,
-                    "session_id": session_id,
-                    "new_message": {
-                        "role": "user",
-                        "parts": message_parts,
+        # Send message using /run endpoint, retry once if response looks like raw tool output
+        max_attempts = 2
+        for attempt in range(max_attempts):
+            run_session = session_id if attempt == 0 else f"eval_{uuid.uuid4().hex[:12]}"
+            if attempt > 0:
+                try:
+                    requests.post(
+                        f"{self.base_url}/apps/{self.agent_name}/users/{self.user_id}/sessions/{run_session}",
+                        json={"state": {}},
+                        timeout=10,
+                    )
+                except requests.exceptions.RequestException:
+                    pass
+            try:
+                response = requests.post(
+                    f"{self.base_url}/run",
+                    json={
+                        "app_name": self.agent_name,
+                        "user_id": self.user_id,
+                        "session_id": run_session,
+                        "new_message": {
+                            "role": "user",
+                            "parts": message_parts,
+                        },
                     },
-                },
-                timeout=300,
-            )
-            response.raise_for_status()
-            events = response.json()
-            response_text, tool_calls = self._extract_response_details(events)
-            return {
-                "response_text": response_text,
-                "tool_calls": tool_calls,
-                "session_id": session_id,
-            }
-        except requests.exceptions.RequestException as error:
-            if self._we_started_server:
-                self.restart_server()
-            error_message = str(error)
-            if hasattr(error, "response") and error.response is not None:
-                body = error.response.text.strip()
-                if body:
-                    error_message = f"{error_message} | body: {body[:500]}"
-            raise RuntimeError(
-                f"Failed to run agent on question: {error_message}"
-            ) from error
+                    timeout=300,
+                )
+                response.raise_for_status()
+                events = response.json()
+                response_text, tool_calls = self._extract_response_details(events)
+                if attempt < max_attempts - 1 and self._looks_like_raw_tool_output(response_text):
+                    continue  # retry
+                return {
+                    "response_text": response_text,
+                    "tool_calls": tool_calls,
+                    "session_id": run_session,
+                }
+            except requests.exceptions.RequestException as error:
+                if self._we_started_server:
+                    self.restart_server()
+                error_message = str(error)
+                if hasattr(error, "response") and error.response is not None:
+                    body = error.response.text.strip()
+                    if body:
+                        error_message = f"{error_message} | body: {body[:500]}"
+                raise RuntimeError(
+                    f"Failed to run agent on question: {error_message}"
+                ) from error
 
 
 # Global runner instance

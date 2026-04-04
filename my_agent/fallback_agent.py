@@ -8,6 +8,38 @@ from google.adk.events.event import Event
 from .modeling import should_fallback_on_error
 
 
+_FAILURE_PHRASES = (
+    "unable to view",
+    "unable to analyze",
+    "cannot see",
+    "cannot view",
+    "can't see",
+    "can't view",
+    "no image",
+    "not able to view",
+    "not able to see",
+    "image-processing capabilities",
+    "image\u2011processing capabilities",
+    "no image capability",
+)
+
+
+def _response_indicates_failure(events: list[Event]) -> bool:
+    """Check if the final text response indicates the model could not process input."""
+    for event in reversed(events):
+        parts = getattr(getattr(event, "content", None), "parts", None)
+        if not parts:
+            continue
+        for part in parts:
+            text = getattr(part, "text", None)
+            if text:
+                lowered = text.lower()
+                if any(phrase in lowered for phrase in _FAILURE_PHRASES):
+                    return True
+                return False
+    return False
+
+
 class ProviderFallbackAgent(BaseAgent):
     """Run a primary agent and retry with a fallback agent on provider failures."""
 

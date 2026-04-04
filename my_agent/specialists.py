@@ -128,6 +128,8 @@ def _build_research_agent(name: str, *, provider_kind: str):
             "RULES:\n"
             "- NEVER answer after just web_search. You MUST always follow up with another tool (query_webpage, extract_tables, or count_pdf_pages_with_phrase) to get the actual data.\n"
             "- If the first tool doesn't give you the answer, call another tool. Do NOT give up or explain what you would do — just DO it.\n"
+            "- When count_pdf_pages_with_phrase returns a number (even 0), TRUST that result and return it immediately as your final answer. Do NOT continue searching.\n"
+            "- CRITICAL: After your tool calls, you MUST provide a final text answer. Never end on a tool call without stating your answer.\n"
             "- Your final response must be ONLY the answer — a number, name, code, or short phrase.\n"
             "- If the request is a plain text reasoning task, transfer to reasoning_agent."
         ),
@@ -137,24 +139,29 @@ def _build_research_agent(name: str, *, provider_kind: str):
 
 
 def _build_vision_agent(name: str, *, provider_kind: str):
-    from .tools import calculator
+    from .tools import calculator, describe_image, read_chess_board
 
-    model = build_primary_adk_model("vision") if provider_kind == "primary" else build_fallback_adk_model("vision")
+    # Use text model for reasoning, vision model via describe_image tool
+    model = build_primary_adk_model("analysis") if provider_kind == "primary" else build_fallback_adk_model("analysis")
     return llm_agent.Agent(
         model=model,
         name=name,
         description="Handles image-understanding tasks.",
         instruction=(
-            "You are the vision specialist. You can see and analyze images.\n\n"
+            "You are the vision specialist. You analyze images using tools.\n\n"
+            "WORKFLOW:\n"
+            "1. Call describe_image with the image path and a SPECIFIC query about what you need to know.\n"
+            "2. Use the description + calculator to compute the answer.\n"
+            "3. For chess positions: call read_chess_board with the image path and whose turn it is.\n\n"
             "RULES:\n"
-            "1. Carefully examine the image and extract ALL relevant information before answering.\n"
-            "2. Use the calculator tool for ANY arithmetic — never compute in your head.\n"
-            "3. Your final response must be ONLY the answer — a number, name, move, or short phrase. No explanation.\n"
-            "4. For pricing/cost questions: identify the plan, calculate totals, and return only the final number.\n"
-            "5. For grading/scoring: apply the scoring rules to EACH problem, sum the points, add any bonus, return the total.\n"
-            "6. For chess: analyze the position carefully and give the move in algebraic notation.\n"
+            "- Use the calculator tool for ALL arithmetic — never compute in your head.\n"
+            "- Your final response must be ONLY the answer — a number, word, or short phrase.\n"
+            "- When computing totals from overage information, total usage = limit + overage.\n"
+            "- When evaluating or grading work, NEVER assume answers are correct. Use the calculator to independently "
+            "compute the correct answer for EACH item, then compare to the given answer. Only count items that match.\n"
+            "- The image path is included in the question text after 'Attached image:'.\n"
         ),
-        tools=[calculator],
+        tools=[calculator, describe_image, read_chess_board],
         generate_content_config=_llm_config(),
     )
 
