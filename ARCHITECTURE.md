@@ -1,10 +1,6 @@
----
-name: Agent architecture and journey
-description: Complete architecture description, what worked, what failed, and all dead ends explored
-type: project
----
+# Agent Architecture
 
-# Agent Architecture (Final)
+> Written on 27/03/2026 at 15/16. Question 16 (chess) was solved afterwards with a CNN board reader that turns the image into a FEN string for Stockfish (`my_agent/tools/chess_engine.py`); the final run on 01/04/2026 scored 16/16.
 
 ## Overview
 DeterministicRouter → 4 specialist agents, each wrapped in ProviderFallbackAgent (primary → fallback on error).

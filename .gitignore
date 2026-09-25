@@ -22,3 +22,10 @@ __pycache__/
 
 # Agent memory
 AGENTS.md
+
+# Local notes and env variants
+CODEX_INSTRUCTIONS.md
+DORMANT.md
+FINE_TUNING_RESEARCH.md
+my_agent/.env.*
+!my_agent/.env.example

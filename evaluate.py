@@ -357,7 +357,8 @@ def evaluate_all(dataset_path=None, output_file=None) -> dict:
 
     # Save results to file
     if output_file is None:
-        output_file = f"evaluation_results_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        os.makedirs("results", exist_ok=True)
+        output_file = f"results/evaluation_results_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
     try:
         with open(output_file, "w") as f:
@@ -382,7 +383,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output",
         type=str,
-        help="Output file path for results. Default: evaluation_results_<timestamp>.json",
+        help="Output file path for results. Default: results/evaluation_results_<timestamp>.json",
     )
 
     args = parser.parse_args()
